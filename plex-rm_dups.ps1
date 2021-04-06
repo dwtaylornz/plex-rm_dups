@@ -1,5 +1,5 @@
-$Server= ""
-$PlexToken = ""
+# $Server= ""
+# $PlexToken = ""
 $libraries = Invoke-RestMethod -Uri "http://$Server/library/sections/all?X-Plex-Token=$PlexToken"
 $VideoLibraries = $libraries.MediaContainer.Directory 
 
