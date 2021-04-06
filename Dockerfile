@@ -1,10 +1,6 @@
 FROM mcr.microsoft.com/powershell:latest
-LABEL maintainer="Darren <darren.taylor@concepts.co.nz>"
+LABEL maintainer="Darren <dwtaylornz@gmail.com>"
 
-# ADD index.html /www/index.html
+ADD plex-rm_dups.ps1
 
-# EXPOSE 8000
-# HEALTHCHECK CMD nc -z localhost 8000
-
-# description
-# CMD trap "exit 0;" TERM INT; httpd -p 8000 -h /www -f & wait
+CMD ./plex-rm_dups.ps1
