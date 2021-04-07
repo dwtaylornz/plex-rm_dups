@@ -3,4 +3,4 @@ LABEL maintainer="Darren <dwtaylornz@gmail.com>"
 
 ADD plex-rm_dups.ps1 .
 
-CMD powershell .\plex-rm_dups.ps1
+CMD pwsh .\plex-rm_dups.ps1
