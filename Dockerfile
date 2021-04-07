@@ -5,5 +5,5 @@ ADD plex-rm_dups.ps1 .
 
 # CMD Write-Host "Starting Script..." 
 # CMD Set-ExecutionPolicy Unrestricted
-CMD chmod +x plex-rm_dups.ps1
+RUN chmod +x plex-rm_dups.ps1
 CMD ./plex-rm_dups.ps1
