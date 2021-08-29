@@ -1,29 +1,48 @@
-$libraries = Invoke-RestMethod -Uri "http://$Server/library/sections/all?X-Plex-Token=$PlexToken"
+$Server = 'server:port'
+$PlexToken = 'yourtokenhere'
+$libraries = Invoke-RestMethod -Uri "http://$server/library/sections/all?X-Plex-Token=$PlexToken"
 $VideoLibraries = $libraries.MediaContainer.Directory 
 
-foreach($library in $VideoLibraries){
+Clear-Host
 
-    Write-Host $library.title
-    $episodes = Invoke-RestMethod -Uri "http://$Server/library/sections/$($library.key)/all?duplicate=1&X-Plex-Token=$PlexToken"
-    foreach($episode in $episodes.MediaContainer.Video){
-        
-        Write-Host "$($episode.GrandparentTitle) $($episode.ParentTitle) $($episode.title) $($episode.size)"
-        
-        $MediaFilesByQuality = $episode.Media | Select-Object  @{L='width';E={[int]$_.width}}, @{L='Bitrate';E={[int]$_.bitrate}}, videoCodec, id | Sort-Object -Property @{Expression = "width"; Descending = $True}, @{Expression = "bitrate"; Descending = $False}
-        $Winner = $MediaFilesByQuality[0]   
-        Write-Host "`tWinner is $($Winner.width) using $($Winner.videoCodec) at $($Winner.bitrate)bps"
-        
-        $Losers = $MediaFilesByQuality[1..$MediaFilesByQuality.Length]
-        
-        Foreach($Loser in $Losers){
+function process_episode([object]$episode) {
 
-            Write-Host "`t`tDeleting loser: $($Loser.width) using $($Loser.videoCodec) at $($Loser.bitrate)bps"
+    Write-Host -ForegroundColor Yellow "$($episode.grandparentTitle) $($episode.title) $($episode.Key)"          
+        
+    $videos = Invoke-RestMethod -Uri "http://$server$($episode.key)?X-Plex-Token=$PlexToken"
+
+    $videos.MediaContainer.Video.Media | Sort-Object -Property videoResolution, bitrate | Format-Table
+    $loser = $videos.MediaContainer.Video.Media | Sort-Object -Property videoResolution, bitrate | Select-Object -Last 1
+    
+    Write-Output "Loser - " 
+    $loser | Format-Table
+    $url = "http://$Server$($Episode.Key)/media/$($Loser.id)?X-Plex-Token=$PlexToken" 
+    Invoke-RestMethod -Method Delete -Uri $url
+}
+
+foreach ($library in $VideoLibraries) {
+
+    Write-Host -ForegroundColor Yellow $library.title 
+    
+    if ($($library.type) -eq "movie") {    
+        
+        $episodes = Invoke-RestMethod -Uri "http://$server/library/sections/$($library.key)/all?duplicate=1&X-Plex-Token=$PlexToken"
+
+        foreach ($episode in $episodes.MediaContainer.Video) {
+        
+            #  Write-Host "Movie Time"
             
-            $url = "http://$Server$($Episode.Key)/media/$($Loser.id)?X-Plex-Token=$PlexToken"
-            
-            # Write-Host $url        
-            Invoke-RestMethod $url -Method Delete
+            process_episode $episode           
+        }
+    }
 
-            }
+    if ($($library.type) -eq "show") {
+        $episodes = Invoke-RestMethod -Uri "http://$server/library/sections/$($library.key)/search?type=4&duplicate=1&X-Plex-Token=$PlexToken"
+        foreach ($episode in $episodes.MediaContainer.Video) {
+        
+            # Write-Host "Show Time"
+
+            process_episode $episode
+        } 
     }
 }
