@@ -2,17 +2,15 @@ package main
 
 import (
 	"encoding/xml"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/jedib0t/go-pretty/v6/table"
 )
-
-const plex_server = "192.168.9.10:32400"
-const plex_token = ""
-
-// Plex_token string := os.Getenv(plex_token)
 
 type Library struct {
 	XMLName         xml.Name `xml:"MediaContainer"`
@@ -153,34 +151,15 @@ type Media struct {
 	} `xml:"Video"`
 }
 
-var video Media
-
-func process_video() {
-
-	// for _, video := range media.Video {
-	// 	fmt.Println(" ", video.Title, "Key:", video.Key)
-
-	// 	var url_video = "http://" + plex_server + video.Key + "/?X-Plex-Token=" + plex_token
-
-	// 	response, err := http.Get(url_video)
-
-	// 	if err != nil {
-	// 		fmt.Print(err.Error())
-	// 		os.Exit(1)
-	// 	}
-
-	// 	responseData, err := ioutil.ReadAll(response.Body)
-
-	// 	var video Media
-	// 	xml.Unmarshal(responseData, &video)
-
-	fmt.Println(video.Text)
-
-	// }
-
-}
-
 func main() {
+
+	serverPtr := flag.String("server", "server:port", "a string")
+	tokenPtr := flag.String("token", "xxxxxxxxxxxxx", "a string")
+
+	flag.Parse()
+
+	plex_server := *serverPtr
+	plex_token := *tokenPtr
 
 	var url_libraries = "http://" + plex_server + "/library/sections/all?X-Plex-Token=" + plex_token
 
@@ -228,34 +207,41 @@ func main() {
 			var media Media
 			xml.Unmarshal(responseData, &media)
 
+			//sort stuff!
+
+			// // Sort by age, keeping original order or equal elements.
+			// sort.SliceStable(media.Video, func(i, j int) bool {
+			// 	return media[i].video < media[j].video
+			// })
+			// fmt.Println(media) // [{David 2} {Eve 2} {Alice 23} {Bob 25}]
+
 			for _, video := range media.Video {
-				fmt.Println("  Video Title:", video.Title, "Key: ", video.Key)
+				fmt.Println(video.Title, video.Key)
 				// fmt.Println("    ", video.Media)
 
-				score := make(map[string]int)
+				t := table.NewWriter()
+				t.SetOutputMirror(os.Stdout)
+				t.AppendHeader(table.Row{"ID", "Size", "Width", "Codec"})
+				t.SortBy([]table.SortBy{
+					{Name: "Codec", Mode: table.Dsc},
+					{Name: "Width", Mode: table.Asc},
+					{Name: "Size", Mode: table.Asc},
+				})
+
 				// width := 0
 				for _, media := range video.Media {
 
-					fmt.Println("     ID:", media.ID, "Size:", media.Part.Size, ", Width:", media.Width, ", Codec:", media.VideoCodec)
+					t.AppendRows([]table.Row{
+						{media.ID, media.Part.Size, media.Width, media.VideoCodec},
+					})
 
-					// need sorting logic here (or above?)
-
-					if media.VideoCodec == "hevc" {
-						score[media.ID] = score[media.ID] + 1000
-					} else {
-						score[media.ID] = score[media.ID] + 0
-					}
-
-					// if media.Width > width {
-					// 	score[media.ID] = score[media.ID] + 100
-					// 	width = media.Width
-					// }
-
-					//					fmt.Println(score)
+					// fmt.Println("     ID:", media.ID, "Size:", media.Part.Size, ", Width:", media.Width, ", Codec:", media.VideoCodec)
+					// fmt.Println(score)
 
 				}
-				fmt.Println(score)
-				// process_video(video)
+				t.SetStyle(table.StyleLight)
+				t.Render()
+
 			}
 
 		}
@@ -282,16 +268,31 @@ func main() {
 			xml.Unmarshal(responseData, &media)
 
 			for _, video := range media.Video {
-				fmt.Println("  Video Title:", video.Title, "Key: ", video.Key)
+				fmt.Println(video.Title, video.Key)
 				// fmt.Println("    ", video.Media)
 
+				t := table.NewWriter()
+				t.SetOutputMirror(os.Stdout)
+				t.AppendHeader(table.Row{"ID", "Size", "Width", "Codec"})
+				t.SortBy([]table.SortBy{
+					{Name: "Codec", Mode: table.Dsc},
+					{Name: "Width", Mode: table.Asc},
+					{Name: "Size", Mode: table.Asc},
+				})
+
+				// width := 0
 				for _, media := range video.Media {
 
-					fmt.Println("     ID:", media.ID, "Size:", media.Part.Size, ", Width:", media.Width, ", Codec:", media.VideoCodec)
+					t.AppendRows([]table.Row{
+						{media.ID, media.Part.Size, media.Width, media.VideoCodec},
+					})
 
-					// need sorting logic here (or above?)
+					// fmt.Println("     ID:", media.ID, "Size:", media.Part.Size, ", Width:", media.Width, ", Codec:", media.VideoCodec)
+					// fmt.Println(score)
 
 				}
+				t.SetStyle(table.StyleLight)
+				t.Render()
 
 				// process_video(video)
 			}
@@ -299,5 +300,7 @@ func main() {
 		}
 
 	}
+
+	// print_table()
 
 }
