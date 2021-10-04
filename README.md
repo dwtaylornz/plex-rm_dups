@@ -1,3 +1,3 @@
 # plex-rm_dups
 
-Finds duplicates and removes them :) 
+Finds duplicate videos and removes them :) 
