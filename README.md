@@ -1,3 +1,3 @@
 # plex-rm_dups
 
-Finds duplicates and removes 
+Finds duplicates and removes them :) 
